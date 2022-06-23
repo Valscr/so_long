@@ -6,7 +6,7 @@
 /*   By: vescaffr <vescaffr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/06/18 17:21:55 by vescaffr          #+#    #+#             */
-/*   Updated: 2022/06/23 11:46:04 by vescaffr         ###   ########.fr       */
+/*   Updated: 2022/06/23 17:13:54 by vescaffr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,23 @@
 #define GREEN_PIXEL 0xFF00
 #define WHITE_PIXEL 0xFFFFFF
 
+typedef struct s_img
+{
+	void	*mlx_img;
+	char	*addr;
+	int		bpp; /* bits per pixel */
+	int		line_len;
+	int		endian;
+}	t_img;
+
+typedef struct s_data
+{
+	void	*mlx_ptr;
+	void	*win_ptr;
+	t_img	img;
+	int		cur_img;
+}	t_data;
+
 typedef struct s_rect
 {
 	int	x;
@@ -35,21 +52,24 @@ typedef struct s_rect
 	int color;
 }	t_rect;
 
-typedef struct s_data
+void	img_pix_put(t_img *img, int x, int y, int color)
 {
-	void	*mlx_ptr;
-	void	*win_ptr;
-	t_img	img;
-}	t_data;
+	char    *pixel;
+	int		i;
 
-typedef struct s_img
-{
-	void	*mlx_img;
-	char	*addr;
-	int		bpp; /* bits per pixel */
-	int		line_len;
-	int		endian;
-}	t_img;
+	i = img->bpp - 8;
+    pixel = img->addr + (y * img->line_len + x * (img->bpp / 8));
+	while (i >= 0)
+	{
+		/* big endian, MSB is the leftmost bit */
+		if (img->endian != 0)
+			*pixel++ = (color >> i) & 0xFF;
+		/* little endian, LSB is the leftmost bit */
+		else
+			*pixel++ = (color >> (img->bpp - 8 - i)) & 0xFF;
+		i -= 8;
+	}
+}
 
 int	handle_keypress(int keysym, t_data *data)
 {
@@ -61,36 +81,34 @@ int	handle_keypress(int keysym, t_data *data)
 	return (0);
 }
 
-void	render_background(t_data *data, int color)
+void	render_background(t_img *img, int color)
 {
 	int	i;
 	int	j;
 
-	if (data->win_ptr == NULL)
-		return ;
 	i = 0;
 	while (i < WINDOW_HEIGHT)
 	{
 		j = 0;
 		while (j < WINDOW_WIDTH)
-			mlx_pixel_put(data->mlx_ptr, data->win_ptr, j++, i, color);
+		{
+			img_pix_put(img, j++, i, color);
+		}
 		++i;
 	}
 }
 
-int render_rect(t_data *data, t_rect rect)
+int render_rect(t_img *img, t_rect rect)
 {
 	int	i;
 	int j;
 
-	if (data->win_ptr == NULL)
-		return (1);
 	i = rect.y;
 	while (i < rect.y + rect.height)
 	{
 		j = rect.x;
 		while (j < rect.x + rect.width)
-			mlx_pixel_put(data->mlx_ptr, data->win_ptr, j++, i, rect.color);
+			img_pix_put(img, j++, i, rect.color);
 		++i;
 	}
 	return (0);
@@ -98,9 +116,14 @@ int render_rect(t_data *data, t_rect rect)
 
 int	render(t_data *data)
 {
-	render_background(data, WHITE_PIXEL);
-	render_rect(data, (t_rect){WINDOW_WIDTH / 2 - 50, WINDOW_HEIGHT / 2 - 50, 100, 100, GREEN_PIXEL});
-	/*render_rect(data, (t_rect){0, 0, 100, 100, RED_PIXEL});*/
+	if (data->win_ptr == NULL)
+		return (1);
+	render_background(&data->img, WHITE_PIXEL);
+	render_rect(&data->img, (t_rect){WINDOW_WIDTH - 100, WINDOW_HEIGHT - 100, 100, 100, GREEN_PIXEL});
+	render_rect(&data->img, (t_rect){0, 0, 100, 100, RED_PIXEL});
+
+	mlx_put_image_to_window(data->mlx_ptr, data->win_ptr, data->img.mlx_img, 0, 0);
+
 	return (0);
 }
 
@@ -120,7 +143,7 @@ int	main(void)
 		return (MLX_ERROR);
 	}
 	data.img.mlx_img = mlx_new_image(data.mlx_ptr, WINDOW_WIDTH, WINDOW_HEIGHT);
-	mlx_get_data_addr(data.img.mlx_img, int *bits_per_pixel, int *size_line, int *endian);
+	data.img.addr = mlx_get_data_addr(data.img.mlx_img, &data.img.bpp, &data.img.line_len, &data.img.endian);
 	mlx_loop_hook(data.mlx_ptr, &render, &data);
 	mlx_hook(data.win_ptr, KeyPress, KeyPressMask, &handle_keypress, &data);
 
