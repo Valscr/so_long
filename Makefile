@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: vescaffr <vescaffr@student.42.fr>          +#+  +:+       +#+         #
+#    By: valentin <valentin@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/08/20 00:42:43 by valentin          #+#    #+#              #
-#    Updated: 2022/09/19 13:33:18 by vescaffr         ###   ########.fr        #
+#    Updated: 2022/11/21 00:10:03 by valentin         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -63,4 +63,4 @@ fclean:	clean
 re:		fclean all
 
 norm:
-	norminette $(SRC_DIR)*.c includes/so_long.h
+	norminette $(SRC_DIR)*.c includes/so_long.h libft/*.c libft/*.h ft_printf/*.c ft_printf/*.h
