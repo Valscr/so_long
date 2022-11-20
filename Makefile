@@ -44,6 +44,7 @@ $(DIR_OBJ)%.o : $(SRC_DIR)%.c
 all: ${NAME}
 
 maker:
+		@chmod +x mlx_linux/configure
 		@make -C mlx_linux
 		@make -C libft
 		@make -C ft_printf
